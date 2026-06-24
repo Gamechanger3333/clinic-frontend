@@ -1,12 +1,6 @@
 const nextConfig = {
-  async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: "http://localhost:3001/api/:path*",
-      },
-    ];
-  },
+  // Proxy is handled by src/app/api/[...proxy]/route.ts
+  // This properly forwards Set-Cookie headers from Express backend
 };
 
 export default nextConfig;

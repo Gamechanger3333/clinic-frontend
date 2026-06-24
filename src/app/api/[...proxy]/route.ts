@@ -1,0 +1,55 @@
+import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
+
+const BACKEND = "http://localhost:3001";
+
+async function handler(req: NextRequest) {
+  const path = req.nextUrl.pathname;
+  const search = req.nextUrl.search;
+  const url = `${BACKEND}${path}${search}`;
+
+  const headers = new Headers();
+
+  // Forward content-type
+  const ct = req.headers.get("content-type");
+  if (ct) headers.set("content-type", ct);
+
+  // Forward cookies from browser to Express
+  const cookieStore = await cookies();
+  const allCookies = cookieStore.getAll();
+  if (allCookies.length > 0) {
+    const cookieHeader = allCookies.map((c) => `${c.name}=${c.value}`).join("; ");
+    headers.set("cookie", cookieHeader);
+  }
+
+  const body =
+    req.method !== "GET" && req.method !== "HEAD"
+      ? await req.arrayBuffer()
+      : undefined;
+
+  const backendRes = await fetch(url, {
+    method: req.method,
+    headers,
+    body: body ? Buffer.from(body) : undefined,
+  });
+
+  // Forward ALL response headers including Set-Cookie
+  const resHeaders = new Headers();
+  backendRes.headers.forEach((val, key) => {
+    resHeaders.append(key, val);
+  });
+
+  const resBody = await backendRes.arrayBuffer();
+
+  return new NextResponse(resBody, {
+    status: backendRes.status,
+    headers: resHeaders,
+  });
+}
+
+export const GET = handler;
+export const POST = handler;
+export const PUT = handler;
+export const PATCH = handler;
+export const DELETE = handler;
+export const OPTIONS = handler;

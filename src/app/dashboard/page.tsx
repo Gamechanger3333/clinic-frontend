@@ -16,6 +16,17 @@ interface Stats {
   recentAppointments: any[];
 }
 
+const DEFAULT_STATS: Stats = {
+  todayAppointments: 0,
+  totalPatients: 0,
+  pendingApprovals: 0,
+  completedToday: 0,
+  totalDoctors: 0,
+  totalDepartments: 0,
+  totalRevenue: 0,
+  recentAppointments: [],
+};
+
 const StatCard = ({ icon, label, value, subtitle, color }: { icon: React.ReactNode; label: string; value: string | number; subtitle?: string; color: string }) => (
   <div className="stat-card animate-fade-in">
     <div className="flex items-start justify-between">
@@ -39,10 +50,34 @@ const statusColors: Record<string, string> = {
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const [stats, setStats] = useState<Stats>({ todayAppointments: 0, totalPatients: 0, pendingApprovals: 0, completedToday: 0, totalDoctors: 0, totalDepartments: 0, totalRevenue: 0, recentAppointments: [] });
+  const [stats, setStats] = useState<Stats>(DEFAULT_STATS);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/dashboard/stats").then((r) => r.json()).then(setStats).catch(console.error);
+    fetch("/api/dashboard/stats")
+      .then(async (r) => {
+        if (!r.ok) {
+          // Backend returned an error status — don't pass it to setStats
+          const body = await r.json().catch(() => ({}));
+          throw new Error(body.error || `Server error: ${r.status}`);
+        }
+        return r.json();
+      })
+      .then((data) => {
+        // Guard: ensure recentAppointments is always an array even if the
+        // backend omits the field or returns null
+        setStats({
+          ...DEFAULT_STATS,
+          ...data,
+          recentAppointments: Array.isArray(data.recentAppointments)
+            ? data.recentAppointments
+            : [],
+        });
+      })
+      .catch((err) => {
+        console.error("Dashboard fetch error:", err);
+        setError(err.message || "Failed to load dashboard data");
+      });
   }, []);
 
   return (
@@ -51,6 +86,12 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-display font-bold">Welcome back, {user?.fullName?.split(" ")[0] || "there"}</h1>
         <p className="text-muted-foreground mt-1">{format(new Date(), "EEEE, MMMM d, yyyy")} — here's what's happening today</p>
       </div>
+
+      {error && (
+        <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard icon={<CalendarDays className="w-5 h-5 text-primary-foreground" />} label="Today's Appointments" value={stats.todayAppointments} subtitle={format(new Date(), "MMM d")} color="bg-primary" />

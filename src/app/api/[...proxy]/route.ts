@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const BACKEND = "http://localhost:3001";
+const BACKEND = process.env.BACKEND_URL || "http://localhost:3001";
 
 async function handler(req: NextRequest) {
   const path = req.nextUrl.pathname;
@@ -13,8 +13,7 @@ async function handler(req: NextRequest) {
   const ct = req.headers.get("content-type");
   if (ct) headers.set("content-type", ct);
 
-  // Forward cookie header directly from the incoming request
-  // This works for both server-side and client-side fetch calls
+  // Forward cookie header for session passthrough
   const cookieHeader = req.headers.get("cookie");
   if (cookieHeader) headers.set("cookie", cookieHeader);
 
@@ -23,11 +22,21 @@ async function handler(req: NextRequest) {
       ? await req.arrayBuffer()
       : undefined;
 
-  const backendRes = await fetch(url, {
-    method: req.method,
-    headers,
-    body: body ? Buffer.from(body) : undefined,
-  });
+  let backendRes: Response;
+  try {
+    backendRes = await fetch(url, {
+      method: req.method,
+      headers,
+      body: body ? Buffer.from(body) : undefined,
+    });
+  } catch (err: any) {
+    // Backend is unreachable (not running, wrong port, network error, etc.)
+    console.error(`[proxy] Failed to reach backend at ${url}:`, err.message);
+    return NextResponse.json(
+      { error: "Backend service is unavailable. Please ensure the server is running." },
+      { status: 503 }
+    );
+  }
 
   // Forward ALL response headers including Set-Cookie
   const resHeaders = new Headers();

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
 interface User {
@@ -16,7 +16,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   signOut: () => Promise<void>;
-  refreshUser: () => Promise<void>;
+  refreshUser: () => Promise<User | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,23 +26,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async (): Promise<User | null> => {
     try {
       const res = await fetch("/api/auth/me");
       if (res.ok) {
         const { user } = await res.json();
         setUser(user);
+        return user;
       } else {
         setUser(null);
+        return null;
       }
     } catch {
       setUser(null);
+      return null;
     }
-  };
+  }, []);
 
   useEffect(() => {
     refreshUser().finally(() => setLoading(false));
-  }, []);
+  }, [refreshUser]);
 
   const signOut = async () => {
     await fetch("/api/auth/logout", { method: "POST" });

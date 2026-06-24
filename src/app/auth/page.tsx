@@ -55,20 +55,19 @@ export default function AuthPage() {
         toast.success("Welcome back!");
       }
 
-      await refreshUser();
-      router.push("/dashboard");
+      // BUG FIX 3: Wait for refreshUser to complete and confirm user is set
+      // before navigating — prevents ProtectedRoute from bouncing back to /auth
+      const updatedUser = await refreshUser();
+      if (updatedUser) {
+        router.push("/dashboard");
+      } else {
+        toast.error("Session could not be established. Please try again.");
+      }
     } catch (err: any) {
       toast.error(err.message || "Authentication failed");
     } finally {
       setLoading(false);
     }
-  };
-
-  const roleLabels: Record<string, string> = {
-    admin: "Admin — Full system access",
-    doctor: "Doctor — Clinical tools",
-    receptionist: "Receptionist — Front desk",
-    patient: "Patient — Self-service portal",
   };
 
   return (
@@ -92,10 +91,8 @@ export default function AuthPage() {
             Streamline your<br />clinic operations
           </h1>
           <p className="text-sidebar-foreground/80 text-lg max-w-md">
-            Manage appointments, patients, prescriptions, and billing — all in one place. Built for modern healthcare teams.
+            Manage appointments, patients, prescriptions, and billing — all in one place.
           </p>
-
-          {/* Role badges */}
           <div className="flex flex-wrap gap-2 mt-4">
             {["Admin", "Doctor", "Receptionist", "Patient"].map((r) => (
               <span
@@ -146,7 +143,6 @@ export default function AuthPage() {
                     required
                   />
                 </div>
-
                 <div className="space-y-2">
                   <Label>Phone (optional)</Label>
                   <Input
@@ -156,7 +152,6 @@ export default function AuthPage() {
                     type="tel"
                   />
                 </div>
-
                 <div className="space-y-2">
                   <Label>Role</Label>
                   <Select value={role} onValueChange={setRole}>
@@ -215,7 +210,7 @@ export default function AuthPage() {
             </Button>
           </form>
 
-          {/* Demo credentials */}
+          {/* Demo credentials — BUG FIX 4: passwords match seeded data */}
           {mode === "login" && (
             <div className="rounded-lg border border-border bg-muted/50 p-4 space-y-2">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
@@ -224,7 +219,7 @@ export default function AuthPage() {
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <button
                   type="button"
-                  onClick={() => { setEmail("admin@clinicflow.com"); setPassword("admin123"); }}
+                  onClick={() => { setEmail("admin@clinicflow.com"); setPassword("Admin@123"); }}
                   className="text-left p-2 rounded border border-border hover:bg-background transition-colors"
                 >
                   <span className="font-medium block">Admin</span>
@@ -232,7 +227,7 @@ export default function AuthPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setEmail("doctor@clinicflow.com"); setPassword("doctor123"); }}
+                  onClick={() => { setEmail("doctor@clinicflow.com"); setPassword("Doctor@123"); }}
                   className="text-left p-2 rounded border border-border hover:bg-background transition-colors"
                 >
                   <span className="font-medium block">Doctor</span>
@@ -240,7 +235,7 @@ export default function AuthPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setEmail("receptionist@clinicflow.com"); setPassword("recept123"); }}
+                  onClick={() => { setEmail("receptionist@clinicflow.com"); setPassword("Recept@123"); }}
                   className="text-left p-2 rounded border border-border hover:bg-background transition-colors"
                 >
                   <span className="font-medium block">Receptionist</span>
@@ -248,7 +243,7 @@ export default function AuthPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setEmail("doctor2@clinicflow.com"); setPassword("doctor123"); }}
+                  onClick={() => { setEmail("doctor2@clinicflow.com"); setPassword("Doctor@123"); }}
                   className="text-left p-2 rounded border border-border hover:bg-background transition-colors"
                 >
                   <span className="font-medium block">Doctor 2</span>

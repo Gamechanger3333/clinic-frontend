@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 
 const BACKEND = "http://localhost:3001";
 
@@ -14,13 +13,10 @@ async function handler(req: NextRequest) {
   const ct = req.headers.get("content-type");
   if (ct) headers.set("content-type", ct);
 
-  // Forward cookies from browser to Express
-  const cookieStore = await cookies();
-  const allCookies = cookieStore.getAll();
-  if (allCookies.length > 0) {
-    const cookieHeader = allCookies.map((c) => `${c.name}=${c.value}`).join("; ");
-    headers.set("cookie", cookieHeader);
-  }
+  // Forward cookie header directly from the incoming request
+  // This works for both server-side and client-side fetch calls
+  const cookieHeader = req.headers.get("cookie");
+  if (cookieHeader) headers.set("cookie", cookieHeader);
 
   const body =
     req.method !== "GET" && req.method !== "HEAD"

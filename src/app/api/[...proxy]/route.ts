@@ -9,13 +9,14 @@ async function handler(req: NextRequest) {
 
   const headers = new Headers();
 
-  // Forward content-type
   const ct = req.headers.get("content-type");
   if (ct) headers.set("content-type", ct);
 
-  // Forward cookie header for session passthrough
   const cookieHeader = req.headers.get("cookie");
   if (cookieHeader) headers.set("cookie", cookieHeader);
+
+  // Tell backend NOT to compress — proxy can't decompress gzip
+  headers.set("accept-encoding", "identity");
 
   const body =
     req.method !== "GET" && req.method !== "HEAD"
@@ -30,7 +31,6 @@ async function handler(req: NextRequest) {
       body: body ? Buffer.from(body) : undefined,
     });
   } catch (err: any) {
-    // Backend is unreachable (not running, wrong port, network error, etc.)
     console.error(`[proxy] Failed to reach backend at ${url}:`, err.message);
     return NextResponse.json(
       { error: "Backend service is unavailable. Please ensure the server is running." },
@@ -38,18 +38,28 @@ async function handler(req: NextRequest) {
     );
   }
 
-  // Forward ALL response headers including Set-Cookie
+  // Forward headers — set-cookie alag handle karo
   const resHeaders = new Headers();
   backendRes.headers.forEach((val, key) => {
+    if (key.toLowerCase() === "set-cookie") return;
+    if (key.toLowerCase() === "content-encoding") return; // gzip header mat bhejo
     resHeaders.append(key, val);
   });
 
   const resBody = await backendRes.arrayBuffer();
 
-  return new NextResponse(resBody, {
+  const response = new NextResponse(resBody, {
     status: backendRes.status,
     headers: resHeaders,
   });
+
+  // Har cookie alag alag append karo
+  const cookies = backendRes.headers.getSetCookie?.() ?? [];
+  for (const cookie of cookies) {
+    response.headers.append("set-cookie", cookie);
+  }
+
+  return response;
 }
 
 export const GET = handler;

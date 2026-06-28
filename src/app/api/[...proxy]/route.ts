@@ -15,6 +15,12 @@ async function handler(req: NextRequest) {
   const cookieHeader = req.headers.get("cookie");
   if (cookieHeader) headers.set("cookie", cookieHeader);
 
+  // CRITICAL: forward the CSRF header too, or every protected POST/PATCH/DELETE
+  // will fail the backend's csrfProtection check (browser sends it, but the
+  // proxy was silently dropping it before reaching Express).
+  const csrfHeader = req.headers.get("x-csrf-token");
+  if (csrfHeader) headers.set("x-csrf-token", csrfHeader);
+
   // Tell backend NOT to compress — proxy can't decompress gzip
   headers.set("accept-encoding", "identity");
 

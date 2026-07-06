@@ -25,18 +25,18 @@ export default function AppSidebar() {
   }, [pathname]);
 
   const allLinks = [
-    { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard", roles: ["admin","doctor","receptionist"] },
+    { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard", roles: ["admin","doctor","receptionist","patient"] },
     { to: "/patients", icon: Users, label: "Patients", roles: ["admin","doctor","receptionist"] },
-    { to: "/appointments", icon: CalendarDays, label: "Appointments", roles: ["admin","doctor","receptionist"] },
-    { to: "/doctors", icon: Stethoscope, label: "Doctors", roles: ["admin","receptionist"] },
+    { to: "/appointments", icon: CalendarDays, label: "Appointments", roles: ["admin","doctor","receptionist","patient"] },
+    { to: "/doctors", icon: Stethoscope, label: "Doctors", roles: ["admin","receptionist","patient"] },
     { to: "/departments", icon: Building2, label: "Departments", roles: ["admin"] },
-    { to: "/prescriptions", icon: Pill, label: "Prescriptions", roles: ["admin","doctor","receptionist"] },
-    { to: "/lab-reports", icon: FlaskConical, label: "Lab Reports", roles: ["admin","doctor","receptionist"] },
-    { to: "/medical-records", icon: FileText, label: "Medical Records", roles: ["admin","doctor"] },
+    { to: "/prescriptions", icon: Pill, label: "Prescriptions", roles: ["admin","doctor","receptionist","patient"] },
+    { to: "/lab-reports", icon: FlaskConical, label: "Lab Reports", roles: ["admin","doctor","receptionist","patient"] },
+    { to: "/medical-records", icon: FileText, label: "Medical Records", roles: ["admin","doctor","patient"] },
     { to: "/pharmacy", icon: Store, label: "Pharmacy", roles: ["admin","receptionist"] },
-    { to: "/billing", icon: CreditCard, label: "Billing", roles: ["admin","receptionist"] },
+    { to: "/billing", icon: CreditCard, label: "Billing", roles: ["admin","receptionist","patient"] },
     { to: "/admin", icon: Shield, label: "Admin Panel", roles: ["admin"] },
-    { to: "/settings", icon: Settings, label: "Settings", roles: ["admin","doctor","receptionist"] },
+    { to: "/settings", icon: Settings, label: "Settings", roles: ["admin","doctor","receptionist","patient"] },
   ];
 
   const links = allLinks.filter((l) => l.roles.includes(user?.role || ""));

@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Link from "next/link";
+import AiAssistant from "@/components/AiAssistant";
 import {
   Heart,
   CalendarDays,
@@ -161,7 +162,7 @@ export default function IndexPage() {
           <div className="max-w-7xl mx-auto px-6 text-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-sm font-medium text-primary mb-8">
               <span className="flex h-2 w-2 rounded-full bg-primary animate-pulse" />
-              Healthcare Management Platform
+              AI Powered Healthcare Management Platform
             </div>
 
             <h1 className="max-w-4xl mx-auto text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 leading-tight">
@@ -378,6 +379,8 @@ export default function IndexPage() {
           © {new Date().getFullYear()} ClinicFlow — Alif Dev Studio. All rights reserved.
         </div>
       </footer>
+
+      <AiAssistant mode="public" />
     </div>
   );
 }

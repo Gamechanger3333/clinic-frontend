@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { CalendarDays, Users, Clock, CheckCircle2, Stethoscope, Building2, DollarSign } from "lucide-react";
+import { CalendarDays, Users, Clock, CheckCircle2, Stethoscope, Building2, DollarSign, Pill, FlaskConical, FileText, CreditCard, UserPlus, ClipboardList } from "lucide-react";
 import { format } from "date-fns";
+import Link from "next/link";
 
 interface Stats {
   todayAppointments: number;
@@ -40,6 +41,33 @@ const StatCard = ({ icon, label, value, subtitle, color }: { icon: React.ReactNo
   </div>
 );
 
+const QUICK_ACTIONS: Record<string, { href: string; label: string; icon: any }[]> = {
+  patient: [
+    { href: "/appointments", label: "Book an Appointment", icon: CalendarDays },
+    { href: "/prescriptions", label: "My Prescriptions", icon: Pill },
+    { href: "/lab-reports", label: "My Lab Reports", icon: FlaskConical },
+    { href: "/billing", label: "My Invoices", icon: CreditCard },
+  ],
+  doctor: [
+    { href: "/appointments", label: "Today's Patients", icon: CalendarDays },
+    { href: "/prescriptions", label: "Write Prescription", icon: Pill },
+    { href: "/medical-records", label: "Medical Records", icon: FileText },
+    { href: "/lab-reports", label: "Order Lab Test", icon: FlaskConical },
+  ],
+  receptionist: [
+    { href: "/appointments", label: "Manage Appointments", icon: CalendarDays },
+    { href: "/patients", label: "Register Patient", icon: UserPlus },
+    { href: "/billing", label: "Create Invoice", icon: CreditCard },
+    { href: "/doctors", label: "Doctor Directory", icon: Stethoscope },
+  ],
+  admin: [
+    { href: "/patients", label: "Manage Patients", icon: Users },
+    { href: "/doctors", label: "Manage Staff", icon: Stethoscope },
+    { href: "/departments", label: "Departments", icon: Building2 },
+    { href: "/billing", label: "Billing Overview", icon: ClipboardList },
+  ],
+};
+
 const statusColors: Record<string, string> = {
   pending: "bg-warning/10 text-warning",
   approved: "bg-info/10 text-info",
@@ -50,6 +78,7 @@ const statusColors: Record<string, string> = {
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const role = user?.role || "patient";
   const [stats, setStats] = useState<Stats>(DEFAULT_STATS);
   const [error, setError] = useState<string | null>(null);
 
@@ -80,6 +109,10 @@ export default function DashboardPage() {
       });
   }, []);
 
+  const quickActions = QUICK_ACTIONS[role] || QUICK_ACTIONS.patient;
+  const todayLabel = role === "patient" ? "My Upcoming" : "Today's Appointments";
+  const recentLabel = role === "patient" ? "My Appointments" : "Recent Appointments";
+
   return (
     <div className="space-y-8">
       <div>
@@ -94,13 +127,15 @@ export default function DashboardPage() {
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={<CalendarDays className="w-5 h-5 text-primary-foreground" />} label="Today's Appointments" value={stats.todayAppointments} subtitle={format(new Date(), "MMM d")} color="bg-primary" />
-        <StatCard icon={<Users className="w-5 h-5 text-info-foreground" />} label="Total Patients" value={stats.totalPatients} subtitle="All registered" color="bg-info" />
+        <StatCard icon={<CalendarDays className="w-5 h-5 text-primary-foreground" />} label={todayLabel} value={stats.todayAppointments} subtitle={format(new Date(), "MMM d")} color="bg-primary" />
+        {role !== "patient" && (
+          <StatCard icon={<Users className="w-5 h-5 text-info-foreground" />} label="Total Patients" value={stats.totalPatients} subtitle="All registered" color="bg-info" />
+        )}
         <StatCard icon={<Clock className="w-5 h-5 text-warning-foreground" />} label="Pending Approvals" value={stats.pendingApprovals} subtitle="Awaiting confirmation" color="bg-warning" />
         <StatCard icon={<CheckCircle2 className="w-5 h-5 text-success-foreground" />} label="Completed Today" value={stats.completedToday} subtitle="Finished appointments" color="bg-success" />
       </div>
 
-      {user?.role === "admin" && (
+      {role === "admin" && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <StatCard icon={<Stethoscope className="w-5 h-5 text-primary-foreground" />} label="Total Doctors" value={stats.totalDoctors} subtitle="Active staff" color="bg-primary" />
           <StatCard icon={<Building2 className="w-5 h-5 text-info-foreground" />} label="Departments" value={stats.totalDepartments} subtitle="Medical divisions" color="bg-info" />
@@ -108,9 +143,28 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Role-specific quick actions — this is what makes each role's dashboard feel like its own */}
+      <div className="glass-card rounded-xl p-5">
+        <h2 className="text-lg font-display font-semibold mb-4 capitalize">{role} Quick Actions</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {quickActions.map(({ href, label, icon: Icon }) => (
+            <Link
+              key={href}
+              href={href}
+              className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border p-4 text-center hover:border-primary/40 hover:bg-primary/5 transition-colors"
+            >
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Icon className="w-5 h-5 text-primary" />
+              </div>
+              <span className="text-xs font-medium">{label}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
+
       <div className="glass-card rounded-xl overflow-hidden">
         <div className="p-5 border-b border-border">
-          <h2 className="text-lg font-display font-semibold">Recent Appointments</h2>
+          <h2 className="text-lg font-display font-semibold">{recentLabel}</h2>
         </div>
         <div className="divide-y divide-border">
           {stats.recentAppointments.length === 0 ? (

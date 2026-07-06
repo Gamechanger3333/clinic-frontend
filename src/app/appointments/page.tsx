@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { apiFetch } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +25,7 @@ const statusColors: Record<string, string> = {
 
 export default function AppointmentsPage() {
   const { user } = useAuth();
+  const isPatient = user?.role === "patient";
   const [appointments, setAppointments] = useState<any[]>([]);
   const [patients, setPatients] = useState<any[]>([]);
   const [doctors, setDoctors] = useState<any[]>([]);
@@ -33,15 +35,19 @@ export default function AppointmentsPage() {
 
   const fetchAll = () => {
     fetch("/api/appointments").then((r) => r.json()).then((d) => setAppointments(d.appointments || []));
-    fetch("/api/patients").then((r) => r.json()).then((d) => setPatients(d.patients || []));
-    fetch("/api/users").then((r) => r.json()).then((d) => setDoctors((d.users || []).filter((u: any) => u.role === "doctor")));
+    // Patients can't list every patient (PHI) or the full user directory —
+    // /api/doctors is readable by any authenticated role and has what we need.
+    if (!isPatient) {
+      fetch("/api/patients").then((r) => r.json()).then((d) => setPatients(d.patients || []));
+    }
+    fetch("/api/doctors").then((r) => r.json()).then((d) => setDoctors((d.doctors || []).map((doc: any) => ({ id: doc.user.id, fullName: doc.user.fullName }))));
   };
 
   useEffect(() => { fetchAll(); }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await fetch("/api/appointments", {
+    const res = await apiFetch("/api/appointments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...form, durationMinutes: parseInt(form.durationMinutes) }),
@@ -52,7 +58,7 @@ export default function AppointmentsPage() {
   };
 
   const updateStatus = async (id: string, status: string) => {
-    const res = await fetch(`/api/appointments/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
+    const res = await apiFetch(`/api/appointments/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
     if (!res.ok) { toast.error("Update failed"); return; }
     toast.success(`Appointment ${status}`);
     fetchAll();
@@ -79,13 +85,15 @@ export default function AppointmentsPage() {
             <DialogContent className="max-w-lg">
               <DialogHeader><DialogTitle>Schedule Appointment</DialogTitle></DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Patient *</Label>
-                  <Select value={form.patientId} onValueChange={(v) => setForm({ ...form, patientId: v })}>
-                    <SelectTrigger><SelectValue placeholder="Select patient" /></SelectTrigger>
-                    <SelectContent>{patients.map((p) => <SelectItem key={p.id} value={p.id}>{p.fullName}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
+                {!isPatient && (
+                  <div className="space-y-2">
+                    <Label>Patient *</Label>
+                    <Select value={form.patientId} onValueChange={(v) => setForm({ ...form, patientId: v })}>
+                      <SelectTrigger><SelectValue placeholder="Select patient" /></SelectTrigger>
+                      <SelectContent>{patients.map((p) => <SelectItem key={p.id} value={p.id}>{p.fullName}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label>Doctor *</Label>
                   <Select value={form.doctorId} onValueChange={(v) => setForm({ ...form, doctorId: v })}>
@@ -137,14 +145,17 @@ export default function AppointmentsPage() {
                   </td>
                   <td className="p-4">
                     <div className="flex gap-1">
-                      {apt.status === "pending" && (
+                      {!isPatient && apt.status === "pending" && (
                         <>
                           <Button variant="ghost" size="sm" onClick={() => updateStatus(apt.id, "approved")} className="text-xs">Approve</Button>
                           <Button variant="ghost" size="sm" onClick={() => updateStatus(apt.id, "rejected")} className="text-xs">Reject</Button>
                         </>
                       )}
-                      {apt.status === "approved" && (
+                      {!isPatient && apt.status === "approved" && (
                         <Button variant="ghost" size="sm" onClick={() => updateStatus(apt.id, "completed")} className="text-xs">Complete</Button>
+                      )}
+                      {isPatient && ["pending", "approved"].includes(apt.status) && (
+                        <Button variant="ghost" size="sm" onClick={() => updateStatus(apt.id, "cancelled")} className="text-xs text-destructive">Cancel</Button>
                       )}
                     </div>
                   </td>

@@ -12,7 +12,7 @@
  *  mfa           → 6-digit TOTP after successful credentials
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button }  from "@/components/ui/button";
@@ -79,7 +79,7 @@ function PasswordStrengthBar({ password }: { password: string }) {
 }
 
 // ─── Main Auth Page ───────────────────────────────────────────────────────────
-export default function AuthPage() {
+function AuthPageInner() {
   const [mode,            setMode]            = useState<AuthMode>("login");
   const [email,           setEmail]           = useState("");
   const [password,        setPassword]        = useState("");
@@ -580,5 +580,13 @@ export default function AuthPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={null}>
+      <AuthPageInner />
+    </Suspense>
   );
 }

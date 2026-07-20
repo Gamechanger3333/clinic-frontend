@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Bell, CheckCheck, Info, AlertTriangle, CheckCircle2 } from "lucide-react";
@@ -16,17 +17,17 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<any[]>([]);
 
   const fetchNotifs = () =>
-    fetch("/api/notifications").then((r) => r.json()).then((d) => setNotifications(d.notifications || []));
+    apiFetch("/api/notifications").then((r) => r.json()).then((d) => setNotifications(d.notifications || []));
 
   useEffect(() => { fetchNotifs(); }, []);
 
   const markRead = async (id: string) => {
-    await fetch(`/api/notifications/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isRead: true }) });
+    await apiFetch(`/api/notifications/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isRead: true }) });
     fetchNotifs();
   };
 
   const markAllRead = async () => {
-    await fetch("/api/notifications/read-all", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+    await apiFetch("/api/notifications/read-all", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
     toast.success("All notifications marked as read");
     fetchNotifs();
   };

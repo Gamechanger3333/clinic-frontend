@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +20,7 @@ export default function PatientsPage() {
   const [editId, setEditId] = useState<string | null>(null);
 
   const fetchPatients = () =>
-    fetch("/api/patients").then((r) => r.json()).then((d) => setPatients(d.patients || []));
+    apiFetch("/api/patients").then((r) => r.json()).then((d) => setPatients(d.patients || []));
 
   useEffect(() => { fetchPatients(); }, []);
 
@@ -28,7 +29,7 @@ export default function PatientsPage() {
     if (!form.fullName.trim()) return;
     const url = editId ? `/api/patients/${editId}` : "/api/patients";
     const method = editId ? "PATCH" : "POST";
-    const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+    const res = await apiFetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
     if (!res.ok) { const d = await res.json(); toast.error(d.error || "Error"); return; }
     toast.success(editId ? "Patient updated" : "Patient added");
     setForm(EMPTY_FORM); setEditId(null); setDialogOpen(false); fetchPatients();

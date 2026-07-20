@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,16 +28,16 @@ export default function LabReportsPage() {
   const [form, setForm] = useState(EMPTY_FORM);
 
   const fetchAll = () => {
-    fetch("/api/lab-reports").then((r) => r.json()).then((d) => setReports(d.reports || []));
-    fetch("/api/patients").then((r) => r.json()).then((d) => setPatients(d.patients || []));
-    fetch("/api/doctors").then((r) => r.json()).then((d) => setDoctors(d.doctors || []));
+    apiFetch("/api/lab-reports").then((r) => r.json()).then((d) => setReports(d.reports || []));
+    apiFetch("/api/patients").then((r) => r.json()).then((d) => setPatients(d.patients || []));
+    apiFetch("/api/doctors").then((r) => r.json()).then((d) => setDoctors(d.doctors || []));
   };
 
   useEffect(() => { fetchAll(); }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await fetch("/api/lab-reports", {
+    const res = await apiFetch("/api/lab-reports", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
@@ -47,7 +48,7 @@ export default function LabReportsPage() {
   };
 
   const updateStatus = async (id: string, status: string) => {
-    await fetch(`/api/lab-reports/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
+    await apiFetch(`/api/lab-reports/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
     toast.success(`Report marked ${status}`);
     fetchAll();
   };

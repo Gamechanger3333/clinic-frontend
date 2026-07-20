@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +17,7 @@ export default function DepartmentsPage() {
   const [editId, setEditId] = useState<string | null>(null);
 
   const fetchDepts = () =>
-    fetch("/api/departments").then((r) => r.json()).then((d) => setDepartments(d.departments || []));
+    apiFetch("/api/departments").then((r) => r.json()).then((d) => setDepartments(d.departments || []));
 
   useEffect(() => { fetchDepts(); }, []);
 
@@ -25,7 +26,7 @@ export default function DepartmentsPage() {
     if (!form.name.trim()) return;
     const url = editId ? `/api/departments/${editId}` : "/api/departments";
     const method = editId ? "PATCH" : "POST";
-    const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+    const res = await apiFetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
     if (!res.ok) { const d = await res.json(); toast.error(d.error || "Error"); return; }
     toast.success(editId ? "Department updated" : "Department created");
     setForm({ name: "", description: "" }); setEditId(null); setDialogOpen(false); fetchDepts();
@@ -38,7 +39,7 @@ export default function DepartmentsPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this department?")) return;
-    const res = await fetch(`/api/departments/${id}`, { method: "DELETE" });
+    const res = await apiFetch(`/api/departments/${id}`, { method: "DELETE" });
     if (!res.ok) { toast.error("Delete failed"); return; }
     toast.success("Department deleted"); fetchDepts();
   };

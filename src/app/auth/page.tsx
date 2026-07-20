@@ -18,9 +18,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button }  from "@/components/ui/button";
 import { Input }   from "@/components/ui/input";
 import { Label }   from "@/components/ui/label";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
+import ThemeToggle from "@/components/ThemeToggle";
 import {
   Heart, Eye, EyeOff, ShieldCheck, Mail, Lock, User,
   Phone, AlertCircle, CheckCircle2, Loader2, ArrowLeft,
@@ -86,7 +84,6 @@ function AuthPageInner() {
   const [newPassword,     setNewPassword]     = useState("");
   const [fullName,        setFullName]        = useState("");
   const [phone,           setPhone]           = useState("");
-  const [role,            setRole]            = useState<string>("receptionist");
   const [otpCode,         setOtpCode]         = useState("");
   const [showPassword,    setShowPassword]    = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -205,7 +202,7 @@ function AuthPageInner() {
     e.preventDefault();
     setLoading(true);
     try {
-      await apiCall("/api/auth/signup", { email, password, fullName, role, phone: phone || undefined });
+      await apiCall("/api/auth/signup", { email, password, fullName, phone: phone || undefined });
 
       await refreshCsrf();
       const updatedUser = await refreshUser();
@@ -253,7 +250,8 @@ function AuthPageInner() {
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="min-h-screen flex bg-background relative">
+      <ThemeToggle className="absolute top-4 right-4 z-20" />
       {/* Left branding panel */}
       <div className="hidden lg:flex lg:w-1/2 bg-sidebar flex-col justify-between p-12 relative overflow-hidden">
         <img
@@ -477,19 +475,12 @@ function AuthPageInner() {
                       placeholder="+92-300-1234567" className="pl-9" />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Role</Label>
-                  <Select value={role} onValueChange={setRole}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="patient">Patient — Self-service portal</SelectItem>
-                      <SelectItem value="doctor">Doctor — Clinical tools</SelectItem>
-                      <SelectItem value="receptionist">Receptionist — Front desk</SelectItem>
-                      <SelectItem value="admin">Admin — Full system access</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="rounded-lg border border-info/30 bg-info/5 p-3 flex items-start gap-2.5">
+                  <ShieldCheck className="w-4 h-4 text-info mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-muted-foreground">
+                    New accounts here are always created as <span className="font-medium text-foreground">Patient</span>.
+                    Doctor, receptionist, and admin accounts are created by an existing admin from the Admin Panel.
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label>Password</Label>

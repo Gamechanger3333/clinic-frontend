@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,9 +36,9 @@ export default function BillingPage() {
   const [dueDate, setDueDate] = useState("");
 
   const fetchAll = () => {
-    fetch("/api/billing/invoices").then((r) => r.json()).then((d) => setInvoices(d.invoices || []));
-    fetch("/api/patients").then((r) => r.json()).then((d) => setPatients(d.patients || []));
-    fetch("/api/appointments").then((r) => r.json()).then((d) => setAppointments(d.appointments || []));
+    apiFetch("/api/billing/invoices").then((r) => r.json()).then((d) => setInvoices(d.invoices || []));
+    apiFetch("/api/patients").then((r) => r.json()).then((d) => setPatients(d.patients || []));
+    apiFetch("/api/appointments").then((r) => r.json()).then((d) => setAppointments(d.appointments || []));
   };
 
   useEffect(() => { fetchAll(); }, []);
@@ -57,7 +58,7 @@ export default function BillingPage() {
     e.preventDefault();
     if (!patientId) { toast.error("Select a patient"); return; }
     if (items.some((i) => !i.description)) { toast.error("All items need a description"); return; }
-    const res = await fetch("/api/billing/invoices", {
+    const res = await apiFetch("/api/billing/invoices", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ patientId, appointmentId: appointmentId || undefined, items, discount: parseFloat(discount || "0"), tax: parseFloat(tax || "0"), notes, dueDate }),
@@ -71,7 +72,7 @@ export default function BillingPage() {
   };
 
   const markPaid = async (id: string) => {
-    const res = await fetch(`/api/billing/invoices/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "paid" }) });
+    const res = await apiFetch(`/api/billing/invoices/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "paid" }) });
     if (!res.ok) { toast.error("Update failed"); return; }
     toast.success("Invoice marked as paid"); fetchAll();
   };

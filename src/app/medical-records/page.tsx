@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,16 +23,16 @@ export default function MedicalRecordsPage() {
   const [form, setForm] = useState(EMPTY_FORM);
 
   const fetchAll = () => {
-    fetch("/api/medical-records").then((r) => r.json()).then((d) => setRecords(d.records || []));
-    fetch("/api/patients").then((r) => r.json()).then((d) => setPatients(d.patients || []));
-    fetch("/api/doctors").then((r) => r.json()).then((d) => setDoctors(d.doctors || []));
+    apiFetch("/api/medical-records").then((r) => r.json()).then((d) => setRecords(d.records || []));
+    apiFetch("/api/patients").then((r) => r.json()).then((d) => setPatients(d.patients || []));
+    apiFetch("/api/doctors").then((r) => r.json()).then((d) => setDoctors(d.doctors || []));
   };
 
   useEffect(() => { fetchAll(); }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await fetch("/api/medical-records", {
+    const res = await apiFetch("/api/medical-records", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),

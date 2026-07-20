@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +26,7 @@ export default function PharmacyPage() {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
     if (showLowStock) params.set("lowStock", "true");
-    fetch(`/api/medicines?${params}`).then((r) => r.json()).then((d) => setMedicines(d.medicines || []));
+    apiFetch(`/api/medicines?${params}`).then((r) => r.json()).then((d) => setMedicines(d.medicines || []));
   };
 
   useEffect(() => { fetchMeds(); }, [search, showLowStock]);
@@ -34,7 +35,7 @@ export default function PharmacyPage() {
     e.preventDefault();
     const url = editId ? `/api/medicines/${editId}` : "/api/medicines";
     const method = editId ? "PATCH" : "POST";
-    const res = await fetch(url, {
+    const res = await apiFetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...form, stockQuantity: parseInt(form.stockQuantity), reorderLevel: parseInt(form.reorderLevel), unitPrice: parseFloat(form.unitPrice) }),
@@ -54,7 +55,7 @@ export default function PharmacyPage() {
     if (!qty || qty <= 0) return;
     const med = medicines.find((m) => m.id === id);
     if (!med) return;
-    const res = await fetch(`/api/medicines/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ stockQuantity: med.stockQuantity + qty }) });
+    const res = await apiFetch(`/api/medicines/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ stockQuantity: med.stockQuantity + qty }) });
     if (!res.ok) { toast.error("Restock failed"); return; }
     toast.success(`Added ${qty} units`);
     setRestockId(null); setRestockQty("0"); fetchMeds();

@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,7 @@ export default function SettingsPage() {
 
   const handleSave = async () => {
     setSaving(true);
-    const res = await fetch("/api/profile", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fullName, phone }) });
+    const res = await apiFetch("/api/profile", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fullName, phone }) });
     if (!res.ok) { toast.error("Failed to update profile"); setSaving(false); return; }
     await refreshUser();
     toast.success("Profile updated");

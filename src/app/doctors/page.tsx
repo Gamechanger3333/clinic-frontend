@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -23,16 +24,16 @@ export default function DoctorsPage() {
   const [form, setForm] = useState(EMPTY_FORM);
 
   const fetchAll = () => {
-    fetch(`/api/doctors${search ? `?search=${search}` : ""}`).then((r) => r.json()).then((d) => setDoctors(d.doctors || []));
-    fetch("/api/users").then((r) => r.json()).then((d) => setUsers((d.users || []).filter((u: any) => u.role === "doctor")));
-    fetch("/api/departments").then((r) => r.json()).then((d) => setDepartments(d.departments || []));
+    apiFetch(`/api/doctors${search ? `?search=${search}` : ""}`).then((r) => r.json()).then((d) => setDoctors(d.doctors || []));
+    apiFetch("/api/users").then((r) => r.json()).then((d) => setUsers((d.users || []).filter((u: any) => u.role === "doctor")));
+    apiFetch("/api/departments").then((r) => r.json()).then((d) => setDepartments(d.departments || []));
   };
 
   useEffect(() => { fetchAll(); }, [search]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await fetch("/api/doctors", {
+    const res = await apiFetch("/api/doctors", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...form, experience: parseInt(form.experience), consultationFee: parseFloat(form.consultationFee) }),
@@ -43,7 +44,7 @@ export default function DoctorsPage() {
   };
 
   const toggleAvailable = async (id: string, current: boolean) => {
-    await fetch(`/api/doctors/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isAvailable: !current }) });
+    await apiFetch(`/api/doctors/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isAvailable: !current }) });
     fetchAll();
   };
 

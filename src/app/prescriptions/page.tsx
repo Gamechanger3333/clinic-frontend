@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -24,8 +25,8 @@ export default function PrescriptionsPage() {
   const [form, setForm] = useState(EMPTY_FORM);
 
   const fetchAll = () => {
-    fetch("/api/prescriptions").then((r) => r.json()).then((d) => setPrescriptions(d.prescriptions || []));
-    fetch("/api/appointments").then((r) => r.json()).then((d) =>
+    apiFetch("/api/prescriptions").then((r) => r.json()).then((d) => setPrescriptions(d.prescriptions || []));
+    apiFetch("/api/appointments").then((r) => r.json()).then((d) =>
       setAppointments((d.appointments || []).filter((a: any) => ["approved", "completed"].includes(a.status)))
     );
   };
@@ -37,7 +38,7 @@ export default function PrescriptionsPage() {
     const apt = appointments.find((a) => a.id === form.appointmentId);
     if (!apt) return;
     const medsArray = form.medications.split("\n").filter(Boolean).map((m) => ({ name: m.trim() }));
-    const res = await fetch("/api/prescriptions", {
+    const res = await apiFetch("/api/prescriptions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ appointmentId: form.appointmentId, patientId: apt.patient?.id, diagnosis: form.diagnosis, medications: medsArray, notes: form.notes }),

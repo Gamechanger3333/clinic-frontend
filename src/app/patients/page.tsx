@@ -7,22 +7,43 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 const EMPTY_FORM = { fullName: "", email: "", phone: "", dateOfBirth: "", gender: "", address: "", medicalHistory: "" };
+const PAGE_SIZE = 10;
 
 export default function PatientsPage() {
   const [patients, setPatients] = useState<any[]>([]);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [editId, setEditId] = useState<string | null>(null);
 
-  const fetchPatients = () =>
-    apiFetch("/api/patients").then((r) => r.json()).then((d) => setPatients(d.patients || []));
+  const fetchPatients = async (targetPage = page, targetSearch = search) => {
+    setLoading(true);
+    const params = new URLSearchParams({ page: String(targetPage), limit: String(PAGE_SIZE) });
+    if (targetSearch.trim()) params.set("search", targetSearch.trim());
+    const res = await apiFetch(`/api/patients?${params.toString()}`);
+    const d = await res.json();
+    setPatients(d.patients || []);
+    setPages(d.pagination?.pages || 1);
+    setTotal(d.pagination?.total ?? (d.patients || []).length);
+    setLoading(false);
+  };
 
-  useEffect(() => { fetchPatients(); }, []);
+  // Reset to page 1 and refetch whenever the search term changes (debounced).
+  useEffect(() => {
+    const t = setTimeout(() => { setPage(1); fetchPatients(1, search); }, 350);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
+
+  useEffect(() => { fetchPatients(page, search); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [page]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,19 +53,13 @@ export default function PatientsPage() {
     const res = await apiFetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
     if (!res.ok) { const d = await res.json(); toast.error(d.error || "Error"); return; }
     toast.success(editId ? "Patient updated" : "Patient added");
-    setForm(EMPTY_FORM); setEditId(null); setDialogOpen(false); fetchPatients();
+    setForm(EMPTY_FORM); setEditId(null); setDialogOpen(false); fetchPatients(page, search);
   };
 
   const openEdit = (p: any) => {
     setForm({ fullName: p.fullName || "", email: p.email || "", phone: p.phone || "", dateOfBirth: p.dateOfBirth || "", gender: p.gender || "", address: p.address || "", medicalHistory: p.medicalHistory || "" });
     setEditId(p.id); setDialogOpen(true);
   };
-
-  const filtered = patients.filter((p) =>
-    p.fullName?.toLowerCase().includes(search.toLowerCase()) ||
-    p.email?.toLowerCase().includes(search.toLowerCase()) ||
-    p.phone?.includes(search)
-  );
 
   return (
     <div className="space-y-6">
@@ -94,12 +109,14 @@ export default function PatientsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {filtered.length === 0 ? (
+              {loading ? (
+                <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">Loading...</td></tr>
+              ) : patients.length === 0 ? (
                 <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">
                   <img src="/patients-care.jpg" alt="Patients" className="w-24 h-24 rounded-xl object-cover mx-auto mb-4 opacity-60" loading="lazy" />
                   <p>No patients found</p>
                 </td></tr>
-              ) : filtered.map((p) => (
+              ) : patients.map((p) => (
                 <tr key={p.id} className="hover:bg-muted/30 transition-colors">
                   <td className="p-4">
                     <div className="flex items-center gap-3">
@@ -118,6 +135,19 @@ export default function PatientsPage() {
             </tbody>
           </table>
         </div>
+        {!loading && total > 0 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-border text-sm text-muted-foreground">
+            <span>Page {page} of {pages} · {total} patient{total === 1 ? "" : "s"}</span>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+                <ChevronLeft className="w-4 h-4" /> Prev
+              </Button>
+              <Button variant="outline" size="sm" disabled={page >= pages} onClick={() => setPage((p) => Math.min(pages, p + 1))}>
+                Next <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

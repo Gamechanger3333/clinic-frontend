@@ -21,7 +21,7 @@ import { Label }   from "@/components/ui/label";
 import ThemeToggle from "@/components/ThemeToggle";
 import {
   Heart, Eye, EyeOff, ShieldCheck, Mail, Lock, User,
-  Phone, AlertCircle, CheckCircle2, Loader2, ArrowLeft,
+  Phone, AlertCircle, CheckCircle2, Loader2, ArrowLeft, Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -175,6 +175,26 @@ function AuthPageInner() {
       toast.error(err.message || "Login failed");
     } finally {
       setLoading(false);
+    }
+  }
+
+  // ── Demo login — one click, no credentials to type. Separate from the
+  // real login flow entirely; never touches the actual signup/login form. ──
+  const [demoLoading, setDemoLoading] = useState(false);
+  async function handleDemoLogin() {
+    setDemoLoading(true);
+    try {
+      await apiCall("/api/auth/demo-login", {});
+      await refreshCsrf();
+      const updatedUser = await refreshUser();
+      if (updatedUser) {
+        toast.success("Welcome to the ClinicFlow demo! Feel free to look around.");
+        router.push("/dashboard");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Couldn't start the demo — please try again.");
+    } finally {
+      setDemoLoading(false);
     }
   }
 
@@ -378,6 +398,31 @@ function AuthPageInner() {
                 <h2 className="text-2xl font-bold">Welcome back</h2>
                 <p className="text-muted-foreground">Sign in to your clinic dashboard</p>
               </div>
+
+              {/* One-click demo — no signup, no email verification, no
+                  password to remember. Separate button, separate endpoint;
+                  the real sign-in form below is untouched. */}
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-primary/30 text-primary hover:bg-primary/5"
+                onClick={handleDemoLogin}
+                disabled={demoLoading}
+              >
+                {demoLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
+                Try Demo Account
+              </Button>
+              <p className="text-xs text-center text-muted-foreground -mt-2">
+                Explore ClinicFlow instantly as a patient — no signup required
+              </p>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border" /></div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">Or sign in</span>
+                </div>
+              </div>
+
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
                   <Label>Email</Label>
